@@ -125,11 +125,12 @@ static const char gVertexShader[] =
 //"varying vec2 UV;\n"
 //"  UV = vertexUV;\n"
 
-static const char gFragmentShader[] =
+
+static const char gFragmentShader[] = // TODO: Fix the texture usage.
 "uniform sampler2D mytexture;\n"
 "varying highp vec2 UV;\n"
 "void main() {\n"
-"  gl_FragColor = texture2D(mytexture, UV);\n"
+"  gl_FragColor = vec4(0.3,1.0,0.2,1.0);\n"
 "}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
@@ -216,8 +217,8 @@ void generateTexture()
 	glTexImage2D(GL_TEXTURE_2D,
 		0, 
 		GL_RGB, 
-		2, 
-		2, 
+		8, 
+		8, 
 		0, 
 		GL_RGB, 
 		GL_FLOAT,
@@ -297,8 +298,11 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	checkGlError("glUseProgram");
 
 	glActiveTexture(GL_TEXTURE0);
+	checkGlError("glActiveTexture");
 	glBindTexture(GL_TEXTURE_2D, diffuse_map);
+	checkGlError("glBindTexture");
 	glUniform1i(gvTextureHandle, 0);
+	checkGlError("glUniform1i");
 
 	glUniformMatrix4fv(gvMVPHandle, 1, GL_FALSE, &MVP[0][0]);
 	checkGlError("glUniformMatrix4fv");
@@ -328,7 +332,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		(void*)0 // array buffer offset
 		);
 
-	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray);
+	glDrawArrays(GL_POINTS, 0, sizeOfVArray);
 	checkGlError("glDrawArrays");
 	glDisableVertexAttribArray(gvPositionHandle);
 	glDisableVertexAttribArray(gvUvHandle);
@@ -336,9 +340,9 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 void renderFrame() {
 	static float grey = 0.0f;
-	if (grey <= 0.4f && breeth == true) {
+	if (grey <= 0.3f && breeth == true) {
 		grey += 0.0008f;
-		if (grey >= 0.4)
+		if (grey >= 0.3)
 		{
 			breeth = false;
 		}
@@ -366,11 +370,11 @@ void renderFrame() {
 	VP = P*V;
 
 	drawCube(glm::vec3(0.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 1.0f));
-	/*drawCube(glm::vec3(0.0f, 2.0f, 0.0f), alpha, glm::vec3(0.0f, 1.0f, 1.0f));
+	drawCube(glm::vec3(0.0f, 2.0f, 0.0f), alpha, glm::vec3(0.0f, 1.0f, 1.0f));
 	drawCube(glm::vec3(0.0f, -2.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
 
 	drawCube(glm::vec3(2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
-	drawCube(glm::vec3(-2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 0.0f));*/
+	drawCube(glm::vec3(-2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 0.0f));
 
 	alpha += 0.01f;
 }

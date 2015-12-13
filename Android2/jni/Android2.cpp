@@ -37,10 +37,14 @@ namespace {
 	GLuint gProgram;
 	GLuint gvPositionHandle;
 	GLuint gvUvHandle;
+	GLuint gvTextureHandle;
 	GLuint gvMVPHandle;
 	//GLuint gvNormalHandle;
 	//GLuint gvTangentHandle;
 	//GLuint gvBitangentHandle;	
+
+	GLuint Diffuse_mapID;
+	GLuint diffuse_map;
 
 	glm::mat4 V;
 	glm::mat4 P;
@@ -66,6 +70,30 @@ namespace {
 
 	bool breeth = true;
 }
+
+#include <assert.h>
+class texture
+{
+public:
+	GLuint load_texture(
+		const GLsizei width, const GLsizei height,
+		const GLenum type, const GLvoid* pixels) {
+		GLuint texture_object_id;
+		glGenTextures(1, &texture_object_id);
+		assert(texture_object_id != 0);
+
+		glBindTexture(GL_TEXTURE_2D, texture_object_id);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexImage2D(
+			GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+		return texture_object_id;
+	}
+};
 
 #define  LOG_TAG    "libgl2jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
@@ -98,10 +126,10 @@ static const char gVertexShader[] =
 //"  UV = vertexUV;\n"
 
 static const char gFragmentShader[] =
-"uniform sampler2D texture;\n"
+"uniform sampler2D mytexture;\n"
 "varying highp vec2 UV;\n"
 "void main() {\n"
-"  gl_FragColor = texture2D(texture, UV);\n"
+"  gl_FragColor = texture2D(mytexture, UV);\n"
 "}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
@@ -172,6 +200,33 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 	return program;
 }
 
+void generateTexture()
+{
+	glGenTextures(1, &diffuse_map);
+
+	float pixels[] = {
+		1.0f, 0.5f, 0.1f, 0.6f, 0.7f, 1.0f,
+		0.5f, 1.0f, 1.0f, 1.0f, 0.5f, 0.1f
+	};
+	glActiveTexture(GL_TEXTURE0);
+	checkGlError("glActiveTexture");
+	glBindTexture(GL_TEXTURE_2D, diffuse_map);
+	checkGlError("glBindTexture");
+
+	glTexImage2D(GL_TEXTURE_2D,
+		0, 
+		GL_RGB, 
+		2, 
+		2, 
+		0, 
+		GL_RGB, 
+		GL_FLOAT,
+		pixels);
+	checkGlError("glTexImage2D");
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+}
+
 bool setupGraphics(int w, int h) {
 	wcpp = w;
 	hcpp = h;
@@ -187,15 +242,15 @@ bool setupGraphics(int w, int h) {
 		return false;
 	}
 
-	sizeOfVArray = sizeof(Vertices) / sizeof(*Vertices);
+	sizeOfVArray = (sizeof(Vertices) / sizeof(*Vertices))/3;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray* sizeof(glm::vec3), &Vertices[0], GL_STATIC_DRAW);
 
-	sizeOfUArray = sizeof(Uvs) / sizeof(*Uvs);
+	sizeOfUArray = (sizeof(Uvs) / sizeof(*Uvs))/2;
 	glGenBuffers(1, &uvbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);	
 
 	/*glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Normals), &Normals[0], GL_STATIC_DRAW);
@@ -221,6 +276,13 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetUniformLocation(\"MVP\") = %d\n",
 		gvMVPHandle);
 
+	gvTextureHandle = glGetAttribLocation(gProgram, "mytexture");
+	checkGlError("glGetAttribLocation");
+	LOGI("glGetAttribLocation(\"mytexture\") = %d\n",
+		gvTextureHandle);
+
+	generateTexture();
+
 	glViewport(0, 0, w, h);
 	checkGlError("glViewport");
 	return true;
@@ -233,6 +295,10 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 	glUseProgram(gProgram);
 	checkGlError("glUseProgram");
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, diffuse_map);
+	glUniform1i(gvTextureHandle, 0);
 
 	glUniformMatrix4fv(gvMVPHandle, 1, GL_FALSE, &MVP[0][0]);
 	checkGlError("glUniformMatrix4fv");
@@ -262,7 +328,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		(void*)0 // array buffer offset
 		);
 
-	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray / 3);
+	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray);
 	checkGlError("glDrawArrays");
 	glDisableVertexAttribArray(gvPositionHandle);
 	glDisableVertexAttribArray(gvUvHandle);
@@ -290,7 +356,7 @@ void renderFrame() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	checkGlError("glClear");
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 5.0f + 2.0f*glm::cos(alpha));
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 10.0f + 4.0f*glm::cos(alpha));
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -300,11 +366,11 @@ void renderFrame() {
 	VP = P*V;
 
 	drawCube(glm::vec3(0.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 1.0f));
-	drawCube(glm::vec3(0.0f, 2.0f, 0.0f), alpha, glm::vec3(0.0f, 1.0f, 1.0f));
+	/*drawCube(glm::vec3(0.0f, 2.0f, 0.0f), alpha, glm::vec3(0.0f, 1.0f, 1.0f));
 	drawCube(glm::vec3(0.0f, -2.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
 
 	drawCube(glm::vec3(2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
-	drawCube(glm::vec3(-2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 0.0f));
+	drawCube(glm::vec3(-2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 0.0f));*/
 
 	alpha += 0.01f;
 }

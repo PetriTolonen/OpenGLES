@@ -30,13 +30,13 @@
     </AndroidBuild>
   </ItemGroup>
   <ItemGroup>
-    <JCompile Include="src\com\yritys\pelio\GL2JNIActivity.java">
+    <JCompile Include="src\com\gles\pt\GL2JNIActivity.java">
       <Filter>src\com\gles\pt</Filter>
     </JCompile>
-    <JCompile Include="src\com\yritys\pelio\GL2JNILib.java">
+    <JCompile Include="src\com\gles\pt\GL2JNILib.java">
       <Filter>src\com\gles\pt</Filter>
     </JCompile>
-    <JCompile Include="src\com\yritys\pelio\GL2JNIView.java">
+    <JCompile Include="src\com\gles\pt\GL2JNIView.java">
       <Filter>src\com\gles\pt</Filter>
     </JCompile>
   </ItemGroup>

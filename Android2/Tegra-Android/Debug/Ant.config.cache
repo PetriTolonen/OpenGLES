@@ -31,9 +31,9 @@ PreBuildCommand=
 AdditionalOptions=
 
 JavaSources:
-F:\GitHubRepos\Toimii\Android2\src\com\yritys\pelio\GL2JNIActivity.java
-F:\GitHubRepos\Toimii\Android2\src\com\yritys\pelio\GL2JNILib.java
-F:\GitHubRepos\Toimii\Android2\src\com\yritys\pelio\GL2JNIView.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNIActivity.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNILib.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNIView.java
 
 AndroidBuildSources:
 F:\GitHubRepos\Toimii\Android2\AndroidManifest.xml

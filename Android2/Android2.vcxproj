@@ -79,13 +79,9 @@
     <ClCompile Include="jni\Android2.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <JCompile Include="src\com\yritys\pelio\GL2JNIActivity.java" />
-  </ItemGroup>
-  <ItemGroup>
-    <JCompile Include="src\com\yritys\pelio\GL2JNILib.java" />
-  </ItemGroup>
-  <ItemGroup>
-    <JCompile Include="src\com\yritys\pelio\GL2JNIView.java" />
+    <JCompile Include="src\com\gles\pt\GL2JNIActivity.java" />
+    <JCompile Include="src\com\gles\pt\GL2JNILib.java" />
+    <JCompile Include="src\com\gles\pt\GL2JNIView.java" />
   </ItemGroup>
   <ItemGroup>
     <None Include="jni\cube.inl" />

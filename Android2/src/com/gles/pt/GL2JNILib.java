@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.yritys.pelio;
+package com.gles.pt;
 
 // Wrapper for native library
 

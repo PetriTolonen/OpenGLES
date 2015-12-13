@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.yritys.pelio;
+package com.gles.pt;
 
 /*
  * Copyright (C) 2008 The Android Open Source Project

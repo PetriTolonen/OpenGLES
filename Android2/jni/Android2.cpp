@@ -85,9 +85,12 @@ static void checkGlError(const char* op) {
 
 static const char gVertexShader[] =
 "attribute vec3 myVertex;\n"
+"attribute vec2 vertexUV;\n"
+"varying vec2 UV;\n"
 "uniform mat4 MVP;\n"
 "void main() {\n"
 "  gl_Position = MVP * vec4(myVertex,1);\n"
+"  UV = vertexUV;\n"
 "}\n";
 
 //"attribute vec2 vertexUV;\n"
@@ -95,18 +98,11 @@ static const char gVertexShader[] =
 //"  UV = vertexUV;\n"
 
 static const char gFragmentShader[] =
-"precision mediump float;\n"
+"uniform sampler2D texture;\n"
+"varying highp vec2 UV;\n"
 "void main() {\n"
-"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
+"  gl_FragColor = texture2D(texture, UV);\n"
 "}\n";
-
-//"uniform sampler2D texture;\n"
-//"varying highp vec2 UV;\n"
-//"  float mx = mod( UV.x + 0.5*floor(UV.y/0.1), 0.33); \n"
-//"  float my = mod( UV.y, 0.1); \n"
-//"  if((mx>0.033) && (my>0.033)) { gl_FragColor = vec4(1.0, 0.5, 0.2, 1.0); }\n"
-//"  else { gl_FragColor = vec4(0.2, 0.5, 1.0, 1.0); }\n"
-//"}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
 //"  gl_FragColor = texture2D(texture, UV);\n"
@@ -196,10 +192,10 @@ bool setupGraphics(int w, int h) {
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray* sizeof(glm::vec3), &Vertices[0], GL_STATIC_DRAW);
 
-	/*sizeOfUArray = sizeof(Uvs) / sizeof(*Uvs);
+	sizeOfUArray = sizeof(Uvs) / sizeof(*Uvs);
 	glGenBuffers(1, &uvbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);*/
+	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);
 
 	/*glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Normals), &Normals[0], GL_STATIC_DRAW);
@@ -215,10 +211,10 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetAttribLocation(\"myVector\") = %d\n",
 		gvPositionHandle);
 
-	/*gvUvHandle = glGetAttribLocation(gProgram, "vertexUV");
+	gvUvHandle = glGetAttribLocation(gProgram, "vertexUV");
 	checkGlError("glGetAttribLocation");
 	LOGI("glGetAttribLocation(\"vertexUV\") = %d\n",
-		gvUvHandle);*/
+		gvUvHandle);
 
 	gvMVPHandle = glGetUniformLocation(gProgram, "MVP");
 	checkGlError("glGetUniformLocation");
@@ -254,23 +250,22 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		(void*)0 // array buffer offset
 		);
 
-	//glEnableVertexAttribArray(gvUvHandle);
-	//checkGlError("glEnableVertexAttribArray");
-	//glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-	//glVertexAttribPointer(
-	//	gvUvHandle, //layout in the shader.
-	//	2,       // size
-	//	GL_FLOAT,// type
-	//	GL_FALSE,// normalized
-	//	0,       // stride
-	//	(void*)0 // array buffer offset
-	//	);
+	glEnableVertexAttribArray(gvUvHandle);
+	checkGlError("glEnableVertexAttribArray");
+	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
+	glVertexAttribPointer(
+		gvUvHandle, //layout in the shader.
+		2,       // size
+		GL_FLOAT,// type
+		GL_FALSE,// normalized
+		0,       // stride
+		(void*)0 // array buffer offset
+		);
 
-	glDrawArrays(GL_POINTS, 0, sizeOfVArray / 3);
+	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray / 3);
 	checkGlError("glDrawArrays");
 	glDisableVertexAttribArray(gvPositionHandle);
-	//glDisableVertexAttribArray(gvUvHandle);
-	
+	glDisableVertexAttribArray(gvUvHandle);
 }
 
 void renderFrame() {

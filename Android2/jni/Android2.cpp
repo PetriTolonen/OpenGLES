@@ -39,12 +39,11 @@ namespace {
 	GLuint gvUvHandle;
 	GLuint gvTextureHandle;
 	GLuint gvMVPHandle;
-	//GLuint gvNormalHandle;
+	GLuint gvNormalHandle;
 	//GLuint gvTangentHandle;
 	//GLuint gvBitangentHandle;	
 
 	GLuint Diffuse_mapID;
-	GLuint diffuse_map;
 
 	glm::mat4 V;
 	glm::mat4 P;
@@ -71,30 +70,6 @@ namespace {
 	bool breeth = true;
 }
 
-#include <assert.h>
-class texture
-{
-public:
-	GLuint load_texture(
-		const GLsizei width, const GLsizei height,
-		const GLenum type, const GLvoid* pixels) {
-		GLuint texture_object_id;
-		glGenTextures(1, &texture_object_id);
-		assert(texture_object_id != 0);
-
-		glBindTexture(GL_TEXTURE_2D, texture_object_id);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexImage2D(
-			GL_TEXTURE_2D, 0, type, width, height, 0, type, GL_UNSIGNED_BYTE, pixels);
-		glGenerateMipmap(GL_TEXTURE_2D);
-
-		glBindTexture(GL_TEXTURE_2D, 0);
-		return texture_object_id;
-	}
-};
-
 #define  LOG_TAG    "libgl2jni"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
@@ -114,11 +89,14 @@ static void checkGlError(const char* op) {
 static const char gVertexShader[] =
 "attribute vec3 myVertex;\n"
 "attribute vec2 vertexUV;\n"
+"attribute vec3 myNormal;\n"
 "varying vec2 UV;\n"
+"varying vec3 Normal;\n"
 "uniform mat4 MVP;\n"
 "void main() {\n"
 "  gl_Position = MVP * vec4(myVertex,1);\n"
 "  UV = vertexUV;\n"
+"  Normal = myNormal;\n"
 "}\n";
 
 //"attribute vec2 vertexUV;\n"
@@ -127,14 +105,17 @@ static const char gVertexShader[] =
 
 
 static const char gFragmentShader[] = // TODO: Fix the texture usage.
+"precision mediump float;\n"
+"varying vec2 UV;\n"
+"varying vec3 Normal;\n"
 "uniform sampler2D mytexture;\n"
-"varying highp vec2 UV;\n"
 "void main() {\n"
-"  gl_FragColor = vec4(0.3,1.0,0.2,1.0);\n"
+"  gl_FragColor = vec4(Normal,1.0);\n"
 "}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
-//"  gl_FragColor = texture2D(texture, UV);\n"
+//"  gl_FragColor = vec4(Normal,1.0);\n"
+//"  gl_FragColor = texture2D(mytexture, UV);\n"
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
 	GLuint shader = glCreateShader(shaderType);
@@ -203,29 +184,31 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 
 void generateTexture()
 {
-	glGenTextures(1, &diffuse_map);
+	
+	glGenTextures(1, &Diffuse_mapID);
 
-	float pixels[] = {
-		1.0f, 0.5f, 0.1f, 0.6f, 0.7f, 1.0f,
-		0.5f, 1.0f, 1.0f, 1.0f, 0.5f, 0.1f
+	GLubyte testpixels[4 * 3] = { 255, 0, 0, // Red
+		0, 255, 0, // Green
+		0, 0, 255, // Blue
+		255, 255, 0 // Yellow
 	};
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
-	glBindTexture(GL_TEXTURE_2D, diffuse_map);
+	glBindTexture(GL_TEXTURE_2D, Diffuse_mapID);
 	checkGlError("glBindTexture");
 
 	glTexImage2D(GL_TEXTURE_2D,
 		0, 
 		GL_RGB, 
-		8, 
-		8, 
+		2, 
+		2, 
 		0, 
 		GL_RGB, 
 		GL_FLOAT,
-		pixels);
+		testpixels);
 	checkGlError("glTexImage2D");
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 }
 
 bool setupGraphics(int w, int h) {
@@ -253,10 +236,12 @@ bool setupGraphics(int w, int h) {
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);	
 
-	/*glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Normals), &Normals[0], GL_STATIC_DRAW);
+	int sizeOfNArray = (sizeof(Normals) / sizeof(*Normals)) / 2;
+	glGenBuffers(1, &normalbuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfNArray*sizeof(glm::vec3), &Normals[0], GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
+	/*glBindBuffer(GL_ARRAY_BUFFER, tangentbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Tangents), &Tangents[0], GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, bitangentbuffer);
@@ -272,6 +257,11 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetAttribLocation(\"vertexUV\") = %d\n",
 		gvUvHandle);
 
+	gvNormalHandle = glGetAttribLocation(gProgram, "myNormal");
+	checkGlError("glGetAttribLocation");
+	LOGI("glGetAttribLocation(\"myVector\") = %d\n",
+		gvNormalHandle);
+
 	gvMVPHandle = glGetUniformLocation(gProgram, "MVP");
 	checkGlError("glGetUniformLocation");
 	LOGI("glGetUniformLocation(\"MVP\") = %d\n",
@@ -282,6 +272,7 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetAttribLocation(\"mytexture\") = %d\n",
 		gvTextureHandle);
 
+	glEnable(GL_TEXTURE_2D);
 	generateTexture();
 
 	glViewport(0, 0, w, h);
@@ -296,13 +287,6 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 	glUseProgram(gProgram);
 	checkGlError("glUseProgram");
-
-	glActiveTexture(GL_TEXTURE0);
-	checkGlError("glActiveTexture");
-	glBindTexture(GL_TEXTURE_2D, diffuse_map);
-	checkGlError("glBindTexture");
-	glUniform1i(gvTextureHandle, 0);
-	checkGlError("glUniform1i");
 
 	glUniformMatrix4fv(gvMVPHandle, 1, GL_FALSE, &MVP[0][0]);
 	checkGlError("glUniformMatrix4fv");
@@ -332,10 +316,36 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		(void*)0 // array buffer offset
 		);
 
+	glEnableVertexAttribArray(gvNormalHandle);
+	checkGlError("glEnableVertexAttribArray");
+	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
+	glVertexAttribPointer(
+		gvNormalHandle, //layout in the shader.
+		3,       // size
+		GL_FLOAT,// type
+		GL_FALSE,// normalized
+		0,       // stride
+		(void*)0 // array buffer offset
+		);
+
+	glEnableVertexAttribArray(gvPositionHandle);
+	glEnableVertexAttribArray(gvUvHandle);
+	glEnableVertexAttribArray(gvNormalHandle);
+
+	glActiveTexture(GL_TEXTURE0);
+	checkGlError("glActiveTexture");
+	glBindTexture(GL_TEXTURE_2D, Diffuse_mapID);
+	checkGlError("glBindTexture");
+	glUniform1i(gvTextureHandle, 0);
+	checkGlError("glUniform1i");
+
 	glDrawArrays(GL_POINTS, 0, sizeOfVArray);
 	checkGlError("glDrawArrays");
 	glDisableVertexAttribArray(gvPositionHandle);
 	glDisableVertexAttribArray(gvUvHandle);
+	glDisableVertexAttribArray(gvNormalHandle);
+
+	//glDrawElements(GL_TRIANGLES, sizeOfVArray, GL_UNSIGNED_SHORT, Indices);
 }
 
 void renderFrame() {

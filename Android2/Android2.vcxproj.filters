@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="res">
+      <UniqueIdentifier>13f5d7f8-7fd6-4f62-adb7-fa1e82374f7b</UniqueIdentifier>
+    </Filter>
+    <Filter Include="res\values">
+      <UniqueIdentifier>01c71a3d-a78f-420a-8d34-0006ea3dc796</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{5e454036-32a7-4198-b369-ba848a02dae0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\com">
+      <UniqueIdentifier>{4d261ee9-14d3-4627-893d-d89537ee858b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\com\yritys">
+      <UniqueIdentifier>{714dd706-a2d0-4a49-a493-65989530ce3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\com\yritys\pelio">
+      <UniqueIdentifier>{4e083b61-70dd-4948-8b7f-8616f5834a28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="jni">
+      <UniqueIdentifier>{aecf06de-9c64-4712-9ae8-d6c749c36adb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidBuild Include="AndroidManifest.xml" />
+    <AndroidBuild Include="res\values\strings.xml">
+      <Filter>res\values</Filter>
+    </AndroidBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <JCompile Include="src\com\yritys\pelio\GL2JNIActivity.java">
+      <Filter>src\com\yritys\pelio</Filter>
+    </JCompile>
+    <JCompile Include="src\com\yritys\pelio\GL2JNILib.java">
+      <Filter>src\com\yritys\pelio</Filter>
+    </JCompile>
+    <JCompile Include="src\com\yritys\pelio\GL2JNIView.java">
+      <Filter>src\com\yritys\pelio</Filter>
+    </JCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="jni\Android2.cpp">
+      <Filter>jni</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="jni\cube.inl" />
+  </ItemGroup>
+</Project>

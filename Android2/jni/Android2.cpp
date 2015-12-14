@@ -183,15 +183,12 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 }
 
 void generateTexture()
-{
-	
-	glGenTextures(1, &Diffuse_mapID);
-
-	GLubyte testpixels[4 * 3] = { 255, 0, 0, // Red
-		0, 255, 0, // Green
-		0, 0, 255, // Blue
-		255, 255, 0 // Yellow
+{	
+	float pixels[] = {
+		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
 	};
+
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
 	glBindTexture(GL_TEXTURE_2D, Diffuse_mapID);
@@ -205,10 +202,12 @@ void generateTexture()
 		0, 
 		GL_RGB, 
 		GL_FLOAT,
-		testpixels);
+		pixels);
 	checkGlError("glTexImage2D");
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 bool setupGraphics(int w, int h) {
@@ -236,7 +235,7 @@ bool setupGraphics(int w, int h) {
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);	
 
-	int sizeOfNArray = (sizeof(Normals) / sizeof(*Normals)) / 2;
+	int sizeOfNArray = (sizeof(Normals) / sizeof(*Normals)) / 3;
 	glGenBuffers(1, &normalbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfNArray*sizeof(glm::vec3), &Normals[0], GL_STATIC_DRAW);
@@ -272,7 +271,11 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetAttribLocation(\"mytexture\") = %d\n",
 		gvTextureHandle);
 
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	glEnable(GL_TEXTURE_2D);
+
+	glGenTextures(1, &Diffuse_mapID);
 	generateTexture();
 
 	glViewport(0, 0, w, h);
@@ -292,8 +295,6 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	checkGlError("glUniformMatrix4fv");
 
 	// Bind V buffer
-	glEnableVertexAttribArray(gvPositionHandle);
-	checkGlError("glEnableVertexAttribArray");
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glVertexAttribPointer(
 		gvPositionHandle, //layout in the shader.
@@ -304,8 +305,6 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		(void*)0 // array buffer offset
 		);
 
-	glEnableVertexAttribArray(gvUvHandle);
-	checkGlError("glEnableVertexAttribArray");
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
 	glVertexAttribPointer(
 		gvUvHandle, //layout in the shader.
@@ -315,9 +314,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		0,       // stride
 		(void*)0 // array buffer offset
 		);
-
-	glEnableVertexAttribArray(gvNormalHandle);
-	checkGlError("glEnableVertexAttribArray");
+	
 	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
 	glVertexAttribPointer(
 		gvNormalHandle, //layout in the shader.
@@ -331,6 +328,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	glEnableVertexAttribArray(gvPositionHandle);
 	glEnableVertexAttribArray(gvUvHandle);
 	glEnableVertexAttribArray(gvNormalHandle);
+	checkGlError("glEnableVertexAttribArray");
 
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
@@ -345,7 +343,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	glDisableVertexAttribArray(gvUvHandle);
 	glDisableVertexAttribArray(gvNormalHandle);
 
-	//glDrawElements(GL_TRIANGLES, sizeOfVArray, GL_UNSIGNED_SHORT, Indices);
+	//glDrawElements(GL_LINES, sizeOfVArray, GL_UNSIGNED_SHORT, Indices);
 }
 
 void renderFrame() {

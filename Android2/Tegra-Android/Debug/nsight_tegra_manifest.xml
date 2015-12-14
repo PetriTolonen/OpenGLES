@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.gles.pt" android:versionCode="1" android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="18" />
+    <uses-sdk android:minSdkVersion="16" android:targetSdkVersion="16" />
     <application android:label="@string/app_name" android:hasCode="True" android:debuggable="true">
         <activity android:name=".GL2JNIActivity" android:label="@string/app_name">
             <meta-data android:name="android.app.lib_name" android:value="Android2" />

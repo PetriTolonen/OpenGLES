@@ -87,7 +87,7 @@
     <JCompile Include="src\com\gles\pt\GL2JNIView.java" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="jni\cube.inl" />
+    <None Include="jni\obj.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

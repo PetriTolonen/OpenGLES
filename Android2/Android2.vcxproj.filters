@@ -46,6 +46,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="jni\cube.inl" />
+    <None Include="jni\obj.inl" />
   </ItemGroup>
 </Project>

@@ -31,7 +31,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 
-#include "cube.inl"
+#include "obj.inl"
 
 namespace {
 	GLuint gProgram;
@@ -39,6 +39,8 @@ namespace {
 	GLuint gvUvHandle;
 	GLuint gvTextureHandle;
 	GLuint gvMVPHandle;
+	GLuint gvMVHandle;
+	GLuint gvLHandle;
 	GLuint gvNormalHandle;
 	//GLuint gvTangentHandle;
 	//GLuint gvBitangentHandle;	
@@ -49,7 +51,9 @@ namespace {
 	glm::mat4 P;
 	glm::mat4 VP;
 	glm::mat4 MVP(1.0);
+	glm::mat4 MV(1.0);
 	glm::mat4 M(1.0);
+	glm::vec3 L(1.0);
 
 	GLfloat alpha = 0.0f;
 	GLfloat wcpp = 0.0f;
@@ -92,11 +96,18 @@ static const char gVertexShader[] =
 "attribute vec3 myNormal;\n"
 "varying vec2 UV;\n"
 "varying vec3 Normal;\n"
+"varying vec3 Position;\n"
+"varying vec3 LightPos;\n"
 "uniform mat4 MVP;\n"
+"uniform mat4 MV;\n"
+"uniform vec3 L;\n"
 "void main() {\n"
-"  gl_Position = MVP * vec4(myVertex,1);\n"
+"  vec4 vPos = vec4(myVertex,1);\n"
+"  Position = vec3(MV * vPos);\n"
 "  UV = vertexUV;\n"
-"  Normal = myNormal;\n"
+"  Normal = vec3(MVP*vec4(myNormal, 0.0));\n"
+"  gl_Position = MVP * vPos;\n"
+"  LightPos = L;"
 "}\n";
 
 //"attribute vec2 vertexUV;\n"
@@ -108,9 +119,14 @@ static const char gFragmentShader[] = // TODO: Fix the texture usage.
 "precision mediump float;\n"
 "varying vec2 UV;\n"
 "varying vec3 Normal;\n"
+"varying vec3 Position;\n"
+"varying vec3 LightPos;\n"
 "uniform sampler2D mytexture;\n"
 "void main() {\n"
-"  gl_FragColor = vec4(Normal,1.0);\n"
+"  vec3 lightVector = normalize(LightPos - Position);\n"
+"  float diffuse = max(dot(Normal, lightVector), 0.0);\n"
+"  diffuse = diffuse + 0.3;\n"
+"  gl_FragColor = (diffuse*vec4(1.0,0.5,0.2,1.0));\n"
 "}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
@@ -211,30 +227,17 @@ GLuint generateTexture(GLuint _ID)
 	return _ID;
 }
 
-bool setupGraphics(int w, int h) {
-	wcpp = w;
-	hcpp = h;
-	printGLString("Version", GL_VERSION);
-	printGLString("Vendor", GL_VENDOR);
-	printGLString("Renderer", GL_RENDERER);
-	printGLString("Extensions", GL_EXTENSIONS);
-
-	LOGI("setupGraphics(%d, %d)", w, h);
-	gProgram = createProgram(gVertexShader, gFragmentShader);
-	if (!gProgram) {
-		LOGE("Could not create program.");
-		return false;
-	}
-
-	sizeOfVArray = (sizeof(Vertices) / sizeof(*Vertices))/3;
+void InitObject()
+{
+	sizeOfVArray = (sizeof(Vertices) / sizeof(*Vertices)) / 3;
 	glGenBuffers(1, &vertexbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray* sizeof(glm::vec3), &Vertices[0], GL_STATIC_DRAW);
 
-	sizeOfUArray = (sizeof(Uvs) / sizeof(*Uvs))/2;
+	sizeOfUArray = (sizeof(Uvs) / sizeof(*Uvs)) / 2;
 	glGenBuffers(1, &uvbuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, uvbuffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);	
+	glBufferData(GL_ARRAY_BUFFER, sizeOfUArray*sizeof(glm::vec2), &Uvs[0], GL_STATIC_DRAW);
 
 	int sizeOfNArray = (sizeof(Normals) / sizeof(*Normals)) / 3;
 	glGenBuffers(1, &normalbuffer);
@@ -267,17 +270,46 @@ bool setupGraphics(int w, int h) {
 	LOGI("glGetUniformLocation(\"MVP\") = %d\n",
 		gvMVPHandle);
 
+	gvMVHandle = glGetUniformLocation(gProgram, "MV");
+	checkGlError("glGetUniformLocation");
+	LOGI("glGetUniformLocation(\"MV\") = %d\n",
+		gvMVHandle);
+
+	gvLHandle = glGetUniformLocation(gProgram, "L");
+	checkGlError("glGetUniformLocation");
+	LOGI("glGetUniformLocation(\"L\") = %d\n",
+		gvLHandle);
+
 	gvTextureHandle = glGetAttribLocation(gProgram, "mytexture");
 	checkGlError("glGetAttribLocation");
 	LOGI("glGetAttribLocation(\"mytexture\") = %d\n",
 		gvTextureHandle);
 
+	glGenTextures(1, &Diffuse_mapID);
+	Diffuse_mapID = generateTexture(Diffuse_mapID);
+}
+
+
+bool setupGraphics(int w, int h) {
+	wcpp = w;
+	hcpp = h;
+	printGLString("Version", GL_VERSION);
+	printGLString("Vendor", GL_VENDOR);
+	printGLString("Renderer", GL_RENDERER);
+	printGLString("Extensions", GL_EXTENSIONS);
+
+	LOGI("setupGraphics(%d, %d)", w, h);
+	gProgram = createProgram(gVertexShader, gFragmentShader);
+	if (!gProgram) {
+		LOGE("Could not create program.");
+		return false;
+	}
+
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	glEnable(GL_TEXTURE_2D);
 
-	glGenTextures(1, &Diffuse_mapID);
-	Diffuse_mapID = generateTexture(Diffuse_mapID);
+	InitObject();
 
 	glViewport(0, 0, w, h);
 	checkGlError("glViewport");
@@ -289,10 +321,12 @@ bool setupGraphics(int w, int h) {
 	return true;
 }
 
-void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
+void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 {
 	M = glm::translate(position)*glm::rotate(rotation, rotationaxel);
 	MVP = VP * M;
+
+	MV = V * M;
 
 	glUseProgram(gProgram);
 	checkGlError("glUseProgram");
@@ -300,7 +334,12 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	glUniformMatrix4fv(gvMVPHandle, 1, GL_FALSE, &MVP[0][0]);
 	checkGlError("glUniformMatrix4fv");
 
-	// Bind V buffer
+	glUniformMatrix4fv(gvMVHandle, 1, GL_FALSE, &MV[0][0]);
+	checkGlError("glUniformMatrix4fv");
+
+	glUniform3fv(gvLHandle, 1, &L[0]);
+	checkGlError("glUniform3fv");
+
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
 	glVertexAttribPointer(
 		gvPositionHandle, //layout in the shader.
@@ -374,21 +413,21 @@ void renderFrame() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	checkGlError("glClear");
 
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 10.0f + 4.0f*glm::cos(alpha));
+	glm::vec3 cameraPos = glm::vec3(1.5f, 0.0f, 4.5f);
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	P = glm::perspective(45.0f, wcpp / hcpp, 0.1f, 1000.f);
+	P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 10000.f);
 	V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 	VP = P*V;
 
-	drawCube(glm::vec3(0.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 1.0f));
-	drawCube(glm::vec3(0.0f, 2.0f, 0.0f), alpha, glm::vec3(0.0f, 1.0f, 1.0f));
-	drawCube(glm::vec3(0.0f, -2.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
+	L = glm::vec3(4.0f, 4.0f, (-7.0f + 14.0f * glm::cos(alpha))); //Light position
 
-	drawCube(glm::vec3(2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 0.0f, 1.0f));
-	drawCube(glm::vec3(-2.0f, 0.0f, 0.0f), alpha, glm::vec3(1.0f, 1.0f, 0.0f));
+	for (int i = 0; i < 1000; i++)
+	{
+		DrawObject(glm::vec3(((i*i) / 40.0f) * glm::sin(alpha) * 1.2f + i*0.7f, (((i*i) / 20.0f) * glm::cos(alpha) * 0.6f), (-i  * 3.0f)), (i + 1) * alpha, glm::vec3(0.0f, 1.0f, 1.0f));
+	}
 
 	alpha += 0.01f;
 }

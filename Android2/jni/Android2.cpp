@@ -182,7 +182,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 	return program;
 }
 
-void generateTexture()
+GLuint generateTexture(GLuint _ID)
 {	
 	float pixels[] = {
 		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
@@ -191,7 +191,7 @@ void generateTexture()
 
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
-	glBindTexture(GL_TEXTURE_2D, Diffuse_mapID);
+	glBindTexture(GL_TEXTURE_2D, _ID);
 	checkGlError("glBindTexture");
 
 	glTexImage2D(GL_TEXTURE_2D,
@@ -208,6 +208,7 @@ void generateTexture()
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	return _ID;
 }
 
 bool setupGraphics(int w, int h) {
@@ -276,10 +277,15 @@ bool setupGraphics(int w, int h) {
 	glEnable(GL_TEXTURE_2D);
 
 	glGenTextures(1, &Diffuse_mapID);
-	generateTexture();
+	Diffuse_mapID = generateTexture(Diffuse_mapID);
 
 	glViewport(0, 0, w, h);
 	checkGlError("glViewport");
+
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+
 	return true;
 }
 
@@ -337,7 +343,7 @@ void drawCube(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	glUniform1i(gvTextureHandle, 0);
 	checkGlError("glUniform1i");
 
-	glDrawArrays(GL_POINTS, 0, sizeOfVArray);
+	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray);
 	checkGlError("glDrawArrays");
 	glDisableVertexAttribArray(gvPositionHandle);
 	glDisableVertexAttribArray(gvUvHandle);

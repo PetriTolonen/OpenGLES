@@ -35,10 +35,13 @@
 
 namespace {
 	GLuint gProgram;
+	GLuint gProgram2;
 	GLuint gvPositionHandle;
+	GLuint gvPositionHandle2;
 	GLuint gvUvHandle;
 	GLuint gvTextureHandle;
 	GLuint gvMVPHandle;
+	GLuint gvMVPHandle2;
 	GLuint gvMVHandle;
 	GLuint gvLHandle;
 	GLuint gvNormalHandle;
@@ -60,6 +63,7 @@ namespace {
 	GLfloat hcpp = 0.0f;
 
 	GLuint vertexbuffer;
+	GLuint vertexbuffer2;
 	GLuint uvbuffer;
 	GLuint normalbuffer;
 	GLuint tangentbuffer;
@@ -69,6 +73,7 @@ namespace {
 	GLuint VertexArrayID;
 
 	int sizeOfVArray;
+	int sizeOfVArray2;
 	int sizeOfUArray;
 
 	bool breeth = true;
@@ -123,15 +128,34 @@ static const char gFragmentShader[] = // TODO: Fix the texture usage.
 "varying vec3 LightPos;\n"
 "uniform sampler2D mytexture;\n"
 "void main() {\n"
+"  vec3 normal = normalize(Normal);\n"
+"  vec3 color = vec3(0.5,1.0,0.5);\n"
+"  vec3 ambient = 0.2*color;\n"
 "  vec3 lightVector = normalize(LightPos - Position);\n"
-"  float diffuse = max(dot(Normal, lightVector), 0.0);\n"
-"  diffuse = diffuse + 0.3;\n"
-"  gl_FragColor = (diffuse*vec4(1.0,0.5,0.2,1.0));\n"
+"  float distance = length(LightPos - Position);\n"
+"  float attenuation = 1.0 / (1.0 + 0.0000009 * distance + 0.0016 * (distance * distance));\n"
+"  float diff = max(dot(normal, lightVector), 0.0);\n"
+"  vec3 diffuse = diff * color;\n"
+"  gl_FragColor = vec4(diffuse*attenuation + ambient*attenuation, 1.0);\n"
 "}\n";
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
 //"  gl_FragColor = vec4(Normal,1.0);\n"
 //"  gl_FragColor = texture2D(mytexture, UV);\n"
+
+static const char gShadelessVertexShader[] =
+"attribute vec3 myVertex;\n"
+"uniform mat4 MVP;\n"
+"void main() {\n"
+"  vec4 vPos = vec4(myVertex,1);\n"
+"  gl_Position = MVP * vPos;\n"
+"}\n";
+
+static const char gShadelessFragmentShader[] =
+"precision mediump float;\n"
+"void main() {\n"
+"  gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+"}\n";
 
 GLuint loadShader(GLenum shaderType, const char* pSource) {
 	GLuint shader = glCreateShader(shaderType);
@@ -289,38 +313,6 @@ void InitObject()
 	Diffuse_mapID = generateTexture(Diffuse_mapID);
 }
 
-
-bool setupGraphics(int w, int h) {
-	wcpp = w;
-	hcpp = h;
-	printGLString("Version", GL_VERSION);
-	printGLString("Vendor", GL_VENDOR);
-	printGLString("Renderer", GL_RENDERER);
-	printGLString("Extensions", GL_EXTENSIONS);
-
-	LOGI("setupGraphics(%d, %d)", w, h);
-	gProgram = createProgram(gVertexShader, gFragmentShader);
-	if (!gProgram) {
-		LOGE("Could not create program.");
-		return false;
-	}
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-	glEnable(GL_TEXTURE_2D);
-
-	InitObject();
-
-	glViewport(0, 0, w, h);
-	checkGlError("glViewport");
-
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-
-	return true;
-}
-
 void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 {
 	M = glm::translate(position)*glm::rotate(rotation, rotationaxel);
@@ -359,7 +351,7 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 		0,       // stride
 		(void*)0 // array buffer offset
 		);
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, normalbuffer);
 	glVertexAttribPointer(
 		gvNormalHandle, //layout in the shader.
@@ -391,45 +383,143 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 	//glDrawElements(GL_LINES, sizeOfVArray, GL_UNSIGNED_SHORT, Indices);
 }
 
+void InitLightObject()
+{
+	sizeOfVArray2 = (sizeof(Vertices) / sizeof(*Vertices)) / 3;
+	glGenBuffers(1, &vertexbuffer2);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer2);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray2* sizeof(glm::vec3), &Vertices[0], GL_STATIC_DRAW);
+
+	gvPositionHandle2 = glGetAttribLocation(gProgram2, "myVertex");
+	checkGlError("glGetAttribLocation");
+	LOGI("glGetAttribLocation(\"myVector\") = %d\n",
+		gvPositionHandle2);
+
+	gvMVPHandle2 = glGetUniformLocation(gProgram2, "MVP");
+	checkGlError("glGetUniformLocation");
+	LOGI("glGetUniformLocation(\"MVP\") = %d\n",
+		gvMVPHandle2);
+}
+
+void DrawLightObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
+{
+	M = glm::translate(position)*glm::rotate(rotation, rotationaxel);
+	MVP = VP * M;
+
+	glUseProgram(gProgram2);
+	checkGlError("glUseProgram");
+
+	glUniformMatrix4fv(gvMVPHandle2, 1, GL_FALSE, &MVP[0][0]);
+	checkGlError("glUniformMatrix4fv");
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer2);
+	glVertexAttribPointer(
+		gvPositionHandle2, //layout in the shader.
+		3,       // size
+		GL_FLOAT,// type
+		GL_FALSE,// normalized
+		0,       // stride
+		(void*)0 // array buffer offset
+		);	
+
+	glEnableVertexAttribArray(gvPositionHandle2);
+	checkGlError("glEnableVertexAttribArray");
+
+	glDrawArrays(GL_TRIANGLES, 0, sizeOfVArray2);
+	checkGlError("glDrawArrays");
+	glDisableVertexAttribArray(gvPositionHandle2);
+
+	//glDrawElements(GL_LINES, sizeOfVArray, GL_UNSIGNED_SHORT, Indices);
+}
+
+
+bool setupGraphics(int w, int h) {
+	wcpp = w;
+	hcpp = h;
+	printGLString("Version", GL_VERSION);
+	printGLString("Vendor", GL_VENDOR);
+	printGLString("Renderer", GL_RENDERER);
+	printGLString("Extensions", GL_EXTENSIONS);
+
+	LOGI("setupGraphics(%d, %d)", w, h);
+	gProgram = createProgram(gVertexShader, gFragmentShader);
+	if (!gProgram) {
+		LOGE("Could not create program.");
+		return false;
+	}
+
+	gProgram2 = createProgram(gShadelessVertexShader, gShadelessFragmentShader);
+	if (!gProgram2) {
+		LOGE("Could not create program.");
+		return false;
+	}
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glEnable(GL_TEXTURE_2D);
+
+	InitObject();
+	InitLightObject();
+
+	
+	glViewport(0, 0, w, h);
+	checkGlError("glViewport");
+
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glDepthRangef(0.0, 100.0);
+	glEnable(GL_DEPTH_TEST);
+
+	return true;
+}
+
 void renderFrame() {
+	// Backround
 	static float grey = 0.0f;
-	if (grey <= 0.3f && breeth == true) {
-		grey += 0.0008f;
-		if (grey >= 0.3)
-		{
-			breeth = false;
-		}
-	}
-	else if (breeth == false)
-	{
-		grey -= 0.0008f;
-		if (grey <= 0)
-		{
-			breeth = true;
-		}
-	}
+	//if (grey <= 0.3f && breeth == true) {
+	//	grey += 0.0008f;
+	//	if (grey >= 0.3)
+	//	{
+	//		breeth = false;
+	//	}
+	//}
+	//else if (breeth == false)
+	//{
+	//	grey -= 0.0008f;
+	//	if (grey <= 0)
+	//	{
+	//		breeth = true;
+	//	}
+	//}
 	glClearColor(grey, grey, grey, 1.0f);
 	checkGlError("glClearColor");
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+	// Clear
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	checkGlError("glClear");
 
+	// Camera
 	glm::vec3 cameraPos = glm::vec3(1.5f, 0.0f, 4.5f);
 	glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 	glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	P = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 10000.f);
+	P = glm::perspective(45.0f, wcpp / hcpp, 0.1f, 1000.f);
 	V = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 	VP = P*V;
 
+	// Light position
 	L = glm::vec3(4.0f, 4.0f, (-7.0f + 14.0f * glm::cos(alpha))); //Light position
+	DrawLightObject(L, alpha, glm::vec3(1.0f, 1.0f, 1.0f));
 
-	for (int i = 0; i < 1000; i++)
+	// Objects
+	for (int i = 0; i < 40; i++)
 	{
 		DrawObject(glm::vec3(((i*i) / 40.0f) * glm::sin(alpha) * 1.2f + i*0.7f, (((i*i) / 20.0f) * glm::cos(alpha) * 0.6f), (-i  * 3.0f)), (i + 1) * alpha, glm::vec3(0.0f, 1.0f, 1.0f));
 	}
 
-	alpha += 0.01f;
+	alpha += 0.005f;
 }
 
 extern "C" {

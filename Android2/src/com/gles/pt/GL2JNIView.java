@@ -101,8 +101,8 @@ class GL2JNIView extends GLSurfaceView {
          * below.
          */
         setEGLConfigChooser( translucent ?
-                             new ConfigChooser(8, 8, 8, 8, depth, stencil) :
-                             new ConfigChooser(5, 6, 5, 0, depth, stencil) );
+                             new ConfigChooser(8, 8, 8, 8, 16, stencil) :
+                             new ConfigChooser(5, 6, 5, 0, 16, stencil) );
 
         /* Set the renderer responsible for frame rendering */
         setRenderer(new Renderer());

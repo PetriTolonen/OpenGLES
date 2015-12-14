@@ -47,5 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="jni\obj.inl" />
+    <None Include="jni\objball.inl" />
   </ItemGroup>
 </Project>

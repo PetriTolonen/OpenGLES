@@ -88,6 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="jni\obj.inl" />
+    <None Include="jni\objball.inl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

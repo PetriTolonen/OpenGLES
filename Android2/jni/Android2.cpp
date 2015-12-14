@@ -32,6 +32,7 @@
 #include <glm/gtx/transform.hpp>
 
 #include "obj.inl"
+#include "objball.inl"
 
 namespace {
 	GLuint gProgram;
@@ -385,10 +386,10 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 void InitLightObject()
 {
-	sizeOfVArray2 = (sizeof(Vertices) / sizeof(*Vertices)) / 3;
+	sizeOfVArray2 = (sizeof(BallVertices) / sizeof(*BallVertices)) / 3;
 	glGenBuffers(1, &vertexbuffer2);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer2);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray2* sizeof(glm::vec3), &Vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfVArray2* sizeof(glm::vec3), &BallVertices[0], GL_STATIC_DRAW);
 
 	gvPositionHandle2 = glGetAttribLocation(gProgram2, "myVertex");
 	checkGlError("glGetAttribLocation");

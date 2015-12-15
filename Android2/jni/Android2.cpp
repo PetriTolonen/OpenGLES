@@ -50,6 +50,7 @@ namespace {
 	//GLuint gvBitangentHandle;	
 
 	GLuint Diffuse_mapID;
+	GLuint diffusemap;
 
 	glm::mat4 V;
 	glm::mat4 P;
@@ -225,16 +226,17 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 	return program;
 }
 
-GLuint generateTexture(GLuint _ID)
+GLuint generateTexture()
 {	
-	GLfloat pixels[] = {
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
+	glGenTextures(1, &diffusemap);
+	unsigned char pixels[] = {
+		255, 255, 255, 255, 255, 255,
+		255, 255, 255, 255, 255, 255
 	};
 
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
-	glBindTexture(GL_TEXTURE_2D, _ID);
+	glBindTexture(GL_TEXTURE_2D, diffusemap);
 	checkGlError("glBindTexture");
 
 	glTexImage2D(GL_TEXTURE_2D,
@@ -244,14 +246,14 @@ GLuint generateTexture(GLuint _ID)
 		2, 
 		0, 
 		GL_RGB, 
-		GL_FLOAT,
+		GL_UNSIGNED_BYTE,
 		pixels);
 	checkGlError("glTexImage2D");
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	return _ID;
+	return 0;
 }
 
 void InitObject()
@@ -312,8 +314,7 @@ void InitObject()
 	LOGI("glGetUniformLocation(\"mytexture\") = %d\n",
 		gvTextureHandle);
 
-	glGenTextures(1, &Diffuse_mapID);
-	Diffuse_mapID = generateTexture(Diffuse_mapID);
+	generateTexture();
 }
 
 void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
@@ -372,7 +373,7 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 	glActiveTexture(GL_TEXTURE0);
 	checkGlError("glActiveTexture");
-	glBindTexture(GL_TEXTURE_2D, Diffuse_mapID);
+	glBindTexture(GL_TEXTURE_2D, diffusemap);
 	checkGlError("glBindTexture");
 	glUniform1i(gvTextureHandle, 0);
 	checkGlError("glUniform1i");
@@ -479,22 +480,22 @@ bool setupGraphics(int w, int h) {
 
 void renderFrame() {
 	// Backround
-	static float grey = 0.0f;
-	//if (grey <= 0.3f && breeth == true) {
-	//	grey += 0.0008f;
-	//	if (grey >= 0.3)
-	//	{
-	//		breeth = false;
-	//	}
-	//}
-	//else if (breeth == false)
-	//{
-	//	grey -= 0.0008f;
-	//	if (grey <= 0)
-	//	{
-	//		breeth = true;
-	//	}
-	//}
+	static float grey = 0.8f;
+	/*if (grey <= 0.3f && breeth == true) {
+		grey += 0.1f;
+		if (grey >= 0.3)
+		{
+			breeth = false;
+		}
+	}
+	else if (breeth == false)
+	{
+		grey -= 0.1f;
+		if (grey <= 0)
+		{
+			breeth = true;
+		}
+	}*/
 	glClearColor(grey, grey, grey, 1.0f);
 	checkGlError("glClearColor");
 
@@ -517,7 +518,7 @@ void renderFrame() {
 	DrawLightObject(L, alpha, glm::vec3(1.0f, 1.0f, 1.0f));
 
 	// Objects
-	for (int i = 0; i < 40; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		DrawObject(glm::vec3(((i*i) / 40.0f) * glm::sin(alpha) * 1.2f + i*0.7f, (((i*i) / 20.0f) * glm::cos(alpha) * 0.6f), (-i  * 3.0f)), (i + 1) * alpha, glm::vec3(0.0f, 1.0f, 1.0f));
 	}

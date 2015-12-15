@@ -44,6 +44,7 @@ namespace {
 	GLuint gvMVPHandle;
 	GLuint gvMVPHandle2;
 	GLuint gvMVHandle;
+	GLuint gvnormalMatrixHandle;
 	GLuint gvLHandle;
 	GLuint gvNormalHandle;
 	//GLuint gvTangentHandle;
@@ -58,6 +59,7 @@ namespace {
 	glm::mat4 MVP(1.0);
 	glm::mat4 MV(1.0);
 	glm::mat4 M(1.0);
+	glm::mat3 normalMatrix(1.0);
 	glm::vec3 L(1.0);
 
 	GLfloat alpha = 0.0f;
@@ -108,13 +110,14 @@ static const char gVertexShader[] =
 "uniform mat4 MVP;\n"
 "uniform mat4 MV;\n"
 "uniform vec3 L;\n"
+"uniform mat3 normalMatrix;\n"
 "void main() {\n"
 "  vec4 vPos = vec4(myVertex,1);\n"
 "  Position = vec3(MV * vPos);\n"
 "  UV = vertexUV;\n"
-"  Normal = vec3(MVP*vec4(myNormal, 0.0));\n"
+"  Normal = normalize(normalMatrix*myNormal);\n"
 "  gl_Position = MVP * vPos;\n"
-"  LightPos = L;"
+"  LightPos = L;\n"
 "}\n";
 
 //"attribute vec2 vertexUV;\n"
@@ -131,11 +134,11 @@ static const char gFragmentShader[] = // TODO: Fix the texture usage.
 "uniform sampler2D mytexture;\n"
 "void main() {\n"
 "  vec3 normal = normalize(Normal);\n"
-"  vec3 color = vec3(texture2D(mytexture, UV).rgb);\n"
+"  vec3 color = vec3(texture2D(mytexture, UV));\n"
 "  vec3 ambient = 0.2*color;\n"
 "  vec3 lightVector = normalize(LightPos - Position);\n"
 "  float distance = length(LightPos - Position);\n"
-"  float attenuation = 1.0 / (1.0 + 0.0000009 * distance + 0.0016 * (distance * distance));\n"
+"  float attenuation = 1.0 / (1.0 + 0.0000009 * distance + 0.0005 * (distance * distance));\n"
 "  float diff = max(dot(normal, lightVector), 0.0);\n"
 "  vec3 diffuse = diff * color;\n"
 "  gl_FragColor = vec4(diffuse*attenuation + ambient*attenuation, 1.0);\n"
@@ -238,8 +241,8 @@ GLuint generateTexture()
 {	
 	glGenTextures(1, &diffusemap);
 	unsigned char pixels[] = {
-		255, 255, 255, 255, 255, 255,
-		255, 255, 255, 255, 255, 255
+		255, 0, 255, 0, 255, 255,
+		255, 0, 0, 150, 100, 0
 	};
 
 	glActiveTexture(GL_TEXTURE0);
@@ -312,6 +315,12 @@ void InitObject()
 	LOGI("glGetUniformLocation(\"MV\") = %d\n",
 		gvMVHandle);
 
+	gvnormalMatrixHandle = glGetUniformLocation(gProgram, "normalMatrix");
+	checkGlError("glGetUniformLocation");
+	LOGI("glGetUniformLocation(\"normalMatrix\") = %d\n",
+		gvnormalMatrixHandle);
+
+
 	gvLHandle = glGetUniformLocation(gProgram, "L");
 	checkGlError("glGetUniformLocation");
 	LOGI("glGetUniformLocation(\"L\") = %d\n",
@@ -332,6 +341,8 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 	MV = V * M;
 
+	normalMatrix = glm::inverse(glm::transpose(glm::mat3(M)));
+
 	glUseProgram(gProgram);
 	checkGlError("glUseProgram");
 
@@ -340,6 +351,9 @@ void DrawObject(glm::vec3 position, float rotation, glm::vec3 rotationaxel)
 
 	glUniformMatrix4fv(gvMVHandle, 1, GL_FALSE, &MV[0][0]);
 	checkGlError("glUniformMatrix4fv");
+
+	glUniformMatrix3fv(gvnormalMatrixHandle, 1, GL_FALSE, &normalMatrix[0][0]);
+	checkGlError("glUniformMatrix3fv");
 
 	glUniform3fv(gvLHandle, 1, &L[0]);
 	checkGlError("glUniform3fv");
@@ -488,9 +502,9 @@ bool setupGraphics(int w, int h) {
 
 void renderFrame() {
 	// Backround
-	static float grey = 0.8f;
+	static float grey = 0.0f;
 	/*if (grey <= 0.3f && breeth == true) {
-		grey += 0.1f;
+		grey += 0.001f;
 		if (grey >= 0.3)
 		{
 			breeth = false;
@@ -498,7 +512,7 @@ void renderFrame() {
 	}
 	else if (breeth == false)
 	{
-		grey -= 0.1f;
+		grey -= 0.001f;
 		if (grey <= 0)
 		{
 			breeth = true;

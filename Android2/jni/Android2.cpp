@@ -129,16 +129,18 @@ static const char gFragmentShader[] = // TODO: Fix the texture usage.
 "varying vec3 LightPos;\n"
 "uniform sampler2D mytexture;\n"
 "void main() {\n"
-"  vec3 normal = normalize(Normal);\n"
-"  vec3 color = vec3(0.5,1.0,0.5);\n"
-"  vec3 ambient = 0.2*color;\n"
-"  vec3 lightVector = normalize(LightPos - Position);\n"
-"  float distance = length(LightPos - Position);\n"
-"  float attenuation = 1.0 / (1.0 + 0.0000009 * distance + 0.0016 * (distance * distance));\n"
-"  float diff = max(dot(normal, lightVector), 0.0);\n"
-"  vec3 diffuse = diff * color;\n"
-"  gl_FragColor = vec4(diffuse*attenuation + ambient*attenuation, 1.0);\n"
+"  gl_FragColor = texture2D(mytexture, UV);\n"
 "}\n";
+
+//"  vec3 normal = normalize(Normal);\n"
+//"  vec3 color = vec3(0.5,1.0,0.5);\n"
+//"  vec3 ambient = 0.2*color;\n"
+//"  vec3 lightVector = normalize(LightPos - Position);\n"
+//"  float distance = length(LightPos - Position);\n"
+//"  float attenuation = 1.0 / (1.0 + 0.0000009 * distance + 0.0016 * (distance * distance));\n"
+//"  float diff = max(dot(normal, lightVector), 0.0);\n"
+//"  vec3 diffuse = diff * color;\n"
+//"  gl_FragColor = vec4(diffuse*attenuation + ambient*attenuation, 1.0);\n"
 
 //"  gl_FragColor = vec4(1.0,0.5,0.2,1.0);\n"
 //"  gl_FragColor = vec4(Normal,1.0);\n"
@@ -225,7 +227,7 @@ GLuint createProgram(const char* pVertexSource, const char* pFragmentSource) {
 
 GLuint generateTexture(GLuint _ID)
 {	
-	float pixels[] = {
+	GLfloat pixels[] = {
 		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 		1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f
 	};
@@ -305,9 +307,9 @@ void InitObject()
 	LOGI("glGetUniformLocation(\"L\") = %d\n",
 		gvLHandle);
 
-	gvTextureHandle = glGetAttribLocation(gProgram, "mytexture");
-	checkGlError("glGetAttribLocation");
-	LOGI("glGetAttribLocation(\"mytexture\") = %d\n",
+	gvTextureHandle = glGetUniformLocation(gProgram, "mytexture");
+	checkGlError("glGetUniformLocation");
+	LOGI("glGetUniformLocation(\"mytexture\") = %d\n",
 		gvTextureHandle);
 
 	glGenTextures(1, &Diffuse_mapID);

@@ -4,15 +4,15 @@ Configuration=Debug
 IsNdkBuildProject=False
 SdkRootPath=C:\NVPACK\android-sdk-windows
 ToolRootPath=C:\NVPACK\apache-ant-1.8.2
-JdkRootPath=C:\NVPACK\jdk1.7.0_71
+JdkRootPath=C:\Program Files (x86)\Java\jdk1.7.0_79
 ToolchainPlugin=android
 ToolchainRootPath=C:\NVPACK\android-ndk-r10e
-OutputDir=C:\Users\PetriTol\Desktop\OpenGLES\Android2\Tegra-Android\Debug\
-ProjectRoot=C:\Users\PetriTol\Desktop\OpenGLES\Android2\
+OutputDir=F:\GitHubRepos\Toimii\Android2\Tegra-Android\Debug\
+ProjectRoot=F:\GitHubRepos\Toimii\Android2\
 ProjectName=Android2
 BuildTarget=Debug
-JavaSourceDir=C:\Users\PetriTol\Desktop\OpenGLES\Android2\src
-AndroidManifestLocation=C:\Users\PetriTol\Desktop\OpenGLES\Android2\AndroidManifest.xml
+JavaSourceDir=F:\GitHubRepos\Toimii\Android2\src
+AndroidManifestLocation=F:\GitHubRepos\Toimii\Android2\AndroidManifest.xml
 JarDirectories=
 JarDependencies=
 NativeLibDirectories=
@@ -31,13 +31,13 @@ PreBuildCommand=
 AdditionalOptions=
 
 JavaSources:
-C:\Users\PetriTol\Desktop\OpenGLES\Android2\src\com\gles\pt\GL2JNIActivity.java
-C:\Users\PetriTol\Desktop\OpenGLES\Android2\src\com\gles\pt\GL2JNILib.java
-C:\Users\PetriTol\Desktop\OpenGLES\Android2\src\com\gles\pt\GL2JNIView.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNIActivity.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNILib.java
+F:\GitHubRepos\Toimii\Android2\src\com\gles\pt\GL2JNIView.java
 
 AndroidBuildSources:
-C:\Users\PetriTol\Desktop\OpenGLES\Android2\AndroidManifest.xml
-C:\Users\PetriTol\Desktop\OpenGLES\Android2\res\values\strings.xml
+F:\GitHubRepos\Toimii\Android2\AndroidManifest.xml
+F:\GitHubRepos\Toimii\Android2\res\values\strings.xml
 
 Sources:
-C:\Users\PetriTol\Desktop\OpenGLES\Tegra-Android\Debug\libAndroid2.so
+F:\GitHubRepos\Toimii\Tegra-Android\Debug\libAndroid2.so
